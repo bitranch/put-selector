@@ -16,6 +16,34 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 		undefined, namespaceIndex, namespaces = false,
 		doc = doc || document,
 		ieCreateElement = typeof doc.createElement == "object"; // telltale sign of the old IE behavior with createElement that does not support later addition of name 
+    // use our own custom Str.replace(regex, function) since iOS 6 Safari's is badly broken
+    function driver(str, reg, callback) {
+        if (reg.global) {
+            reg.lastIndex = 0;
+        }
+        var result = [],
+            lastidx = reg.lastIndex,
+            re, idx;
+
+        while ((re = reg.exec(str)) !== null) {
+            idx = re.index;
+            if (str.length == idx) {
+                break;
+            }
+            var args = re.concat(idx, str);
+            result.push(
+                str.slice(lastidx, idx),
+                callback.apply(null, args));
+            if (!reg.global) {
+                lastidx += RegExp.lastMatch.length;
+                break;
+            } else {
+                lastidx = reg.lastIndex;
+            }
+        }
+        result.push(str.slice(lastidx));
+        return result.join("");
+    }
 	function insertTextNode(element, text){
 		element.appendChild(doc.createTextNode(text));
 	}
@@ -76,7 +104,7 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 					topReferenceElement = null;
 				}
 				lastSelectorArg = true;
-				var leftoverCharacters = argument.replace(selectorParse, function(t, combinator, prefix, value, attrName, attrValue){
+				var leftoverCharacters = driver(argument, selectorParse, function(t, combinator, prefix, value, attrName, attrValue){
 					if(combinator){
 						// insert the last current object
 						insertLastElement();
