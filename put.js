@@ -7,7 +7,7 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 	// summary:
 	//		This module defines a fast lightweight function for updating and creating new elements
 	//		terse, CSS selector-based syntax. The single function from this module creates
-	// 		new DOM elements and updates existing elements. See README.md for more information.
+	//		new DOM elements and updates existing elements. See README.md for more information.
 	//	examples:
 	//		To create a simple div with a class name of "foo":
 	//		|	put("div.foo");
@@ -16,34 +16,34 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 		undefined, namespaceIndex, namespaces = false,
 		doc = doc || document,
 		ieCreateElement = typeof doc.createElement == "object"; // telltale sign of the old IE behavior with createElement that does not support later addition of name 
-    // use our own custom Str.replace(regex, function) since iOS 6 Safari's is badly broken
-    function driver(str, reg, callback) {
-        if (reg.global) {
-            reg.lastIndex = 0;
-        }
-        var result = [],
-            lastidx = reg.lastIndex,
-            re, idx;
-
-        while ((re = reg.exec(str)) !== null) {
-            idx = re.index;
-            if (str.length == idx) {
-                break;
-            }
-            var args = re.concat(idx, str);
-            result.push(
-                str.slice(lastidx, idx),
-                callback.apply(null, args));
-            if (!reg.global) {
-                lastidx += RegExp.lastMatch.length;
-                break;
-            } else {
-                lastidx = reg.lastIndex;
-            }
-        }
-        result.push(str.slice(lastidx));
-        return result.join("");
-    }
+	// use our own custom Str.replace(regex, function) since iOS 6 Safari's is badly broken
+	function driver(str, reg, callback) {
+		if (reg.global) {
+			reg.lastIndex = 0;
+		}
+		var result = [],
+		    lastidx = reg.lastIndex,
+		    re, idx;
+	    
+		while ((re = reg.exec(str)) !== null) {
+			idx = re.index;
+			if (str.length == idx) {
+			    break;
+			}
+			var args = re.concat(idx, str);
+			result.push(
+			    str.slice(lastidx, idx),
+			    callback.apply(window, args));
+			if (!reg.global) {
+			    lastidx += RegExp.lastMatch.length;
+			    break;
+			} else {
+			    lastidx = reg.lastIndex;
+			}
+		}
+		result.push(str.slice(lastidx));
+		return result.join("");
+	}
 	function insertTextNode(element, text){
 		element.appendChild(doc.createTextNode(text));
 	}
@@ -64,19 +64,19 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 					(fragment || 
 						// fragment doesn't exist yet, check to see if we really want to create it 
 						(fragment = fragmentFasterHeuristic.test(argument) && doc.createDocumentFragment()))
-							// any of the above fails just use the referenceElement  
+							// any of the above fails just use the referenceElement	 
 							|| referenceElement).
 								insertBefore(current, nextSibling || null); // do the actual insertion
 			}
 		}
 		for(var i = 0; i < args.length; i++){
-			var argument = args[i];
+			var argument = args[i], key;
 			if(typeof argument == "object"){
 				lastSelectorArg = false;
 				if(argument instanceof Array){
 					// an array
 					current = doc.createDocumentFragment();
-					for(var key = 0; key < argument.length; key++){
+					for(key = 0; key < argument.length; key++){
 						current.appendChild(put(argument[key]));
 					}
 					argument = current;
@@ -88,7 +88,7 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 					nextSibling = 0;
 				}else{
 					// an object hash
-					for(var key in argument){
+					for(key in argument){
 						current[key] = argument[key];
 					}				
 				}
@@ -140,16 +140,17 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 					if(tag || (!current && (prefix || attrName))){
 						if(tag == "$"){
 							// this is a variable to be replaced with a text node
-							insertTextNode(referenceElement, args[++i]);
+							i = i + 1; // bypass broken JIT in Safari 6.0
+							insertTextNode(referenceElement, args[i]);
 						}else{
 							// Need to create an element
 							tag = tag || put.defaultTag;
-							var ieInputName = ieCreateElement && args[i +1] && args[i +1].name;
+							var ieInputName = ieCreateElement && args[i + 1] && args[i + 1].name;
 							if(ieInputName){
-								// in IE, we have to use the crazy non-standard createElement to create input's that have a name 
+								// in IE, we have to use the crazy non-standard createElement to create inputs that have a name 
 								tag = '<' + tag + ' name="' + ieInputName + '">';
 							}
-							// we swtich between creation methods based on namespace usage
+							// we switch between creation methods based on namespace usage
 							current = namespaces && ~(namespaceIndex = tag.indexOf('|')) ?
 								doc.createElementNS(namespaces[tag.slice(0, namespaceIndex)], tag.slice(namespaceIndex + 1)) : 
 								doc.createElement(tag);
@@ -157,7 +158,8 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 					}
 					if(prefix){
 						if(value == "$"){
-							value = args[++i];
+							i = i + 1; // bypass broken JIT in Safari 6.0
+							value = args[i];
 						}
 						if(prefix == "#"){
 							// #id was specified
@@ -179,7 +181,7 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 									if(ieCreateElement){
 										// use the ol' innerHTML trick to get IE to do some cleanup
 										put("div", current, '<').innerHTML = "";
-									}else if(parentNode = current.parentNode){ // intentional assigment
+									}else if((parentNode = current.parentNode)){ // intentional assigment
 										// use a faster, and more correct (for namespaced elements) removal (http://jsperf.com/removechild-innerhtml)
 										parentNode.removeChild(current);
 									}
@@ -197,7 +199,8 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 					}
 					if(attrName){
 						if(attrValue == "$"){
-							attrValue = args[++i];
+							i = i + 1; // bypass broken JIT in Safari 6.0
+							attrValue = args[i];
 						}
 						// [name=value]
 						if(attrName == "style"){
