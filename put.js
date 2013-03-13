@@ -13,7 +13,7 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 	//		|	put("div.foo");
 	fragmentFasterHeuristic = newFragmentFasterHeuristic || fragmentFasterHeuristic;
 	var selectorParse = /(?:\s*([-+ ,<>]))?\s*(\.|!\.?|#)?([-\w%$|]+)?(?:\[([^\]=]+)=?['"]?([^\]'"]*)['"]?\])?/g,
-		undefined, namespaceIndex, namespaces = false,
+		namespaceIndex, namespaces = false,
 		doc = doc || document,
 		ieCreateElement = typeof doc.createElement == "object"; // telltale sign of the old IE behavior with createElement that does not support later addition of name 
 	// use our own custom Str.replace(regex, function) since iOS 6 Safari's is badly broken
@@ -59,7 +59,14 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 			// are done on a detached DOM which is much faster
 			// Also if there is a parse error, we generally error out before doing any DOM operations (more atomic) 
 			if(current && referenceElement && current != referenceElement){
-				(referenceElement == topReferenceElement &&
+                                var chunk = null;
+                                if (referenceElement == topReferenceElement) {
+                                    chunk = fragment ? fragment : (fragmentFasterHeuristic.test(argument) && doc.createDocumentFragment());
+                                }
+                                chunk = chunk || referenceElement;
+                                chunk.insertBefore(current, nextSibling || null); // do the actual insertion
+                         /*
+				(referenceElement == topReferenceElement && 
 					// top level, may use fragment for faster access 
 					(fragment || 
 						// fragment doesn't exist yet, check to see if we really want to create it 
@@ -67,6 +74,7 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 							// any of the above fails just use the referenceElement	 
 							|| referenceElement).
 								insertBefore(current, nextSibling || null); // do the actual insertion
+                        */
 			}
 		}
 		for(var i = 0; i < args.length; i++){
