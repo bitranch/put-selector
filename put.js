@@ -51,6 +51,17 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 		var fragment, lastSelectorArg, nextSibling, referenceElement, current,
 			args = arguments,
 			returnValue = args[0]; // use the first argument as the default return value in case only an element is passed in
+function _get_chunk(){
+    var chunk = null;
+    if (referenceElement == topReferenceElement) {
+        chunk = fragment ? fragment : (fragmentFasterHeuristic.test(argument) && doc.createDocumentFragment());
+        fragment = chunk;
+    }
+    return chunk;
+}
+function _insert_chunk(chunk){
+    chunk.insertBefore(current, nextSibling || null); // do the actual insertion
+}
 		function insertLastElement(){
 			// we perform insertBefore actions after the element is fully created to work properly with 
 			// <input> tags in older versions of IE that require type attributes
@@ -59,13 +70,8 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 			// are done on a detached DOM which is much faster
 			// Also if there is a parse error, we generally error out before doing any DOM operations (more atomic) 
                         if(current && referenceElement && current != referenceElement){
-                                var chunk = null;
-                                if (referenceElement == topReferenceElement) {
-                                    chunk = fragment ? fragment : (fragmentFasterHeuristic.test(argument) && doc.createDocumentFragment());
-                                    fragment = chunk;
-                                }
-                                chunk = chunk || referenceElement;
-                                chunk.insertBefore(current, nextSibling || null); // do the actual insertion
+                                var chunk = _get_chunk() || referenceElement;
+                                _insert_chunk(chunk);
                          /*
 				(referenceElement == topReferenceElement && 
 					// top level, may use fragment for faster access 
