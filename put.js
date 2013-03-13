@@ -58,10 +58,11 @@ define([], forDocument = function(doc, newFragmentFasterHeuristic){
 			// We also handle top level as a document fragment actions in a complex creation 
 			// are done on a detached DOM which is much faster
 			// Also if there is a parse error, we generally error out before doing any DOM operations (more atomic) 
-			if(current && referenceElement && current != referenceElement){
+                        if(current && referenceElement && current != referenceElement){
                                 var chunk = null;
                                 if (referenceElement == topReferenceElement) {
                                     chunk = fragment ? fragment : (fragmentFasterHeuristic.test(argument) && doc.createDocumentFragment());
+                                    fragment = chunk;
                                 }
                                 chunk = chunk || referenceElement;
                                 chunk.insertBefore(current, nextSibling || null); // do the actual insertion
